@@ -1,0 +1,139 @@
+﻿@page "/categories"
+@using Data.Entities;
+@using Services
+@using System.Linq
+@using BlazorToDoApp.Data.DTOs;
+@using System.ComponentModel.DataAnnotations;
+@inject CategoryService _categoryService
+
+<h3>Categories</h3>
+
+<DeleteConfirmationModal @ref="deleteConfirmationModal" Message="Deleting this category will delete all the todo items that belong to this category. Are you sure you want to proceed?" OnConfirm="DeleteCategoryConfirmed" />
+
+
+<div class="container p-3">
+    <!-- Input for adding a new category with EditForm -->
+    <div class="row pt-4">
+        <div class="col-12">
+            <EditForm Model="categoryDTO" OnValidSubmit="AddNewCategory">
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <input @bind="categoryDTO.Name" class="form-control" placeholder="Enter new category name" />
+                    <ValidationMessage For="@(() => categoryDTO.Name)" />
+                </div>
+                <button type="submit" class="btn btn-success" style="margin-top: 15px">Submit New Category</button>
+            </EditForm>
+        </div>
+    </div>
+
+    @if (_categories is not null && _categories.Any())
+    {
+        <div class="mt-5">
+            <table class="table table-bordered table-striped" style="width:100%">
+                <thead>
+                    <tr>
+                        <th class="text-primary">
+                            Category Name
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var category in _categories)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    @if (category.Id == editingCategoryId)
+                                    {
+                                        <EditForm Model="editingCategoryDTO" OnValidSubmit="SaveCategory" class="flex-grow-1">
+                                            <DataAnnotationsValidator />
+                                            <input @bind="editingCategoryDTO.Name" class="form-control d-inline-block" style="width: 70%;" />
+                                            <ValidationMessage For="@(() => editingCategoryDTO.Name)" />
+                                            <button type="submit" class="btn btn-success btn-sm ml-2">Save</button>
+                                        </EditForm>
+                                    }
+                                    else
+                                    {
+                                        <span class="flex-grow-1">@category.Name</span>
+
+                                        <!-- Buttons -->
+                                        <div>
+                                            <button @onclick="(() => StartEditingCategory(category))" class="btn btn-warning btn-sm ml-2"><i class="bi bi-pencil"></i>Edit</button>
+                                            <button @onclick="(() => StartDeletingCategory(category.Id))" class="btn btn-danger btn-sm ml-2"><i class="bi bi-trash"></i>Delete</button>
+                                        </div>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    } else
+    {
+        <p>No categories to show</p>
+    }
+
+</div>
+
+
+@code {
+    private CategoryDTO categoryDTO = new CategoryDTO();
+    public IEnumerable<Category> _categories { get; set; }
+    private int? editingCategoryId = null;
+    private CategoryDTO editingCategoryDTO = new CategoryDTO();
+
+    private DeleteConfirmationModal deleteConfirmationModal;
+
+    private int categoryToDeleteId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = (await _categoryService.getAllCategories());
+    }
+
+    private async Task DeleteCategoryConfirmed()
+    {
+        await _categoryService.DeleteCategory(categoryToDeleteId);
+        _categories = (await _categoryService.getAllCategories());
+        // Close the confirmation modal
+        deleteConfirmationModal.CloseModal();
+    }
+
+    private void StartDeletingCategory(int id)
+    {
+        categoryToDeleteId = id;
+        deleteConfirmationModal.Show();
+    }
+
+    private async Task DeleteCategory(int id)
+    {
+        await _categoryService.DeleteCategory(id);
+        _categories = (await _categoryService.getAllCategories());
+    }
+
+    private async Task AddNewCategory()
+    {
+        await _categoryService.AddNewCategory(categoryDTO);
+        categoryDTO.Name = string.Empty;
+        _categories = (await _categoryService.getAllCategories());
+    }
+
+    private void StartEditingCategory(Category category)
+    {
+        editingCategoryId = category.Id;
+        editingCategoryDTO.Name = category.Name;
+    }
+
+    private async Task SaveCategory()
+    {
+        if (editingCategoryId.HasValue)
+        {
+            await _categoryService.UpdateCategory(editingCategoryId.Value, editingCategoryDTO);
+            editingCategoryId = null; 
+            editingCategoryDTO = new CategoryDTO(); 
+            _categories = await _categoryService.getAllCategories();
+        }
+    }
+}

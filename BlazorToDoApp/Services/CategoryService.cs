@@ -3,7 +3,7 @@ using BlazorToDoApp.Data.Entities;
 using BlazorToDoApp.Data.Repositories;
 using BlazorToDoApp.Data.DTOs;
 
-namespace ToDoApp.Services;
+namespace BlazorToDoApp.Services;
 
 public class CategoryService
 {
@@ -47,4 +47,6 @@ public class CategoryService
     {
         await _categoryRepository.DeleteAsync(id);
     }
+
+    
 }

@@ -5,13 +5,12 @@ using BlazorToDoApp.Data.DTOs;
 using System.Runtime.InteropServices;
 using System.Reflection;
 
-namespace ToDoApp.Services;
+namespace BlazorToDoApp.Services;
 
 public class ToDoService
 {
     private Repository<ToDoItem> _toDoRepository { get; set; }
     private Repository<Category> _categoryRepository { get; set; }
-
     public ToDoService(Repository<ToDoItem> toDoRepository, Repository<Category> categoryRepository)
     {
         _toDoRepository = toDoRepository;
@@ -35,6 +34,9 @@ public class ToDoService
         {
             toDoItem.Title = toDoItemDTO.Title;
             toDoItem.Complete = toDoItemDTO.Complete;
+            toDoItem.Description = toDoItemDTO.Description;
+            toDoItem.DateTime = toDoItemDTO.DateTime;
+            
             toDoItem.Category = (await _categoryRepository.GetByIdAsync(toDoItemDTO.CategoryId));
         }
         await _toDoRepository.AddAsync(toDoItem);
@@ -47,17 +49,13 @@ public class ToDoService
         {
             toDoItem.Title = toDoDTO.Title;
             toDoItem.Complete = toDoDTO.Complete;
-
+            toDoItem.Description = toDoDTO.Description;
+            toDoItem.DateTime = toDoDTO.DateTime;
             // Fetch the category
             var category = await _categoryRepository.GetByIdAsync(toDoDTO.CategoryId);
-            if(category is not null)
-            {
-                toDoItem.Category = category;
-            }
-            else
-            {
-                toDoItem.Category = null;
-            }
+        } else
+        {
+            throw new Exception("Can't find a ToDoItem");
         }
 
         await _toDoRepository.UpdateAsync(toDoItem);
@@ -66,5 +64,24 @@ public class ToDoService
     public async Task DeleteToDoItem(int id)
     {
         await _toDoRepository.DeleteAsync(id);
+    }
+
+    public async Task<IEnumerable<ToDoItem>> GetToDosByCategory(int categoryId)
+    {
+        var category = await _categoryRepository.GetByIdAsync(categoryId);
+
+        if (category is null)
+        {
+            return Enumerable.Empty<ToDoItem>();
+        }
+
+        return category.ToDoItems.ToList();
+    }
+
+    public async Task setChecked(int id, bool state)
+    {
+        ToDoItem item = await GetToDoById(id);
+        item.Complete = state;
+        await _toDoRepository.UpdateAsync(item);
     }
 }

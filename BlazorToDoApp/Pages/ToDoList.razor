@@ -1,0 +1,225 @@
+﻿@page "/todolist"
+@using DevExpress.Blazor;
+@using Data.Entities;
+@using Services;
+@using BlazorToDoApp.Data.DTOs;
+@inject ToDoService _toDoService;
+@inject CategoryService _categoryService;
+@inject ILogger<ToDoList> Logger;
+
+<EditForm Model="_toDoItemDTO" OnValidSubmit="AddToDoItem">
+    <DataAnnotationsValidator/>
+    <ValidationSummary />
+
+    <DxLoadingIndicator Visible="@true"></DxLoadingIndicator>
+
+    <DxFormLayout>
+        <DxFormLayoutItem Caption="Title">
+            <Template Context="TitleContext">
+                <DxTextBox @bind-Text="_toDoItemDTO.Title"></DxTextBox>
+            </Template>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="Description">
+            <Template Context="DescriptionContext">
+                <DxTextBox @bind-Text="_toDoItemDTO.Description"></DxTextBox>
+            </Template>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="Date">
+            <Template Context="DateContext">
+                <DxDateEdit DateExpression="@(() => _datePart)" DateChanged="@((DateTime newValue) => UpdateDate(newValue))" Date="_datePart"></DxDateEdit>
+            </Template>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="Time">
+            <Template Context="TimeContext">
+                <DxTimeEdit TimeExpression="@(() => _timePart)" TimeChanged="((TimeSpan newValue) => UpdateTime(newValue))" Time="_timePart" ></DxTimeEdit>
+            </Template>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem>
+            <Template Context="CategoryContext">
+                <DxComboBox 
+                    DataAsync="@(ct => Task.FromResult(_categories))" 
+                    TData="Category" 
+                    TValue="int?" 
+                    @bind-Value="_toDoItemDTO.CategoryId"
+                    ValueFieldName="Id"
+                    TextFieldName="Name"
+                ></DxComboBox>
+            </Template>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem>
+            <Template Context="SubmitContext">
+                @if (editingToDoItemId is null)
+                {
+                    <DxButton SubmitFormOnClick="true" Text="Submit" />
+                } else
+                {
+                    <DxButton Click="@(async () => await UpdateToDoItem())" Text="Save" />
+                    <DxButton Click="@(() => CancelEdit())" Context="buttonCtx">Cancel</DxButton>
+                }
+            </Template>
+        </DxFormLayoutItem>
+    </DxFormLayout>
+</EditForm>
+
+<DxComboBox 
+    DataAsync="@(ct => Task.FromResult(_categories))" 
+    TData="Category" 
+    TValue="int?" 
+    ValueFieldName="Id"
+    TextFieldName="Name"
+    ValueChanged="@(async (int? newValue) => await FilterByCategory(newValue))"
+    NullText="All Categories"
+></DxComboBox>
+
+<DxGrid Data="@_toDoItems" ShowSearchBox="true" ShowFilterRow="true">
+    <Columns>
+        <DxGridDataColumn FieldName="Title"></DxGridDataColumn>
+        <DxGridDataColumn FieldName="Description"></DxGridDataColumn>
+        <DxGridDataColumn FieldName="Category.Name" Caption="Category" FilterRowEditorVisible="false"></DxGridDataColumn>
+        <DxGridDataColumn FieldName="DateTime" SearchEnabled="false" ></DxGridDataColumn>
+        <DxGridDataColumn FieldName="Complete">
+            <CellDisplayTemplate Context="checkContext">
+                <DxCheckBox Checked="@((bool)(checkContext.DataItem as ToDoItem)?.Complete)" CheckedChanged="@((bool newValue) => UpdateComplete(checkContext.DataItem as ToDoItem, newValue))"></DxCheckBox>
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+        <DxGridDataColumn SearchEnabled="false" FilterRowEditorVisible="false">
+            <CellDisplayTemplate Context="buttonContext">
+                <DxButton Click="@(async () => await DeleteButtonClick(buttonContext.DataItem as ToDoItem))" Enabled="@(editingToDoItemId is null)">Delete</DxButton>
+                <DxButton Click="@(() => EditButtonClick(buttonContext.DataItem as ToDoItem))">Edit</DxButton>
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+    </Columns>
+</DxGrid>
+
+
+
+
+@code {
+    private IEnumerable<ToDoItem> _toDoItems { get; set; }
+    private IEnumerable<Category> _categories { get; set; }
+    private ToDoItemDTO _toDoItemDTO = new ToDoItemDTO();
+
+    private int? _selectedCategoryId = null;
+
+    private int? editingToDoItemId = null;
+
+    private DateTime _datePart = DateTime.Today;
+    private TimeSpan _timePart = new TimeSpan(12, 0, 0);
+
+
+    private async Task FilterByCategory(int? categoryId)
+    {
+
+        _selectedCategoryId = categoryId;
+        if (categoryId.HasValue)
+        {
+            _toDoItems = (await _toDoService.GetToDosByCategory(categoryId.Value)).ToList();
+        }
+        else
+        {
+            _toDoItems = (await _toDoService.getAllToDos()).ToList();
+        }
+
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshToDoItemsAndCategories();
+    }
+
+    private void UpdateDate(DateTime newDate)
+    {
+        _datePart = newDate.Date;
+        _toDoItemDTO.DateTime = _datePart.Add(_timePart);
+    }
+
+    private void UpdateTime(TimeSpan newTime)
+    {
+        _timePart = newTime;
+        _toDoItemDTO.DateTime = _datePart.Add(_timePart);
+    }
+
+    private async Task AddToDoItem(EditContext context)
+    {
+
+        _toDoItemDTO.DateTime = _datePart.Add(_timePart);
+
+        await _toDoService.AddNewToDoItem(_toDoItemDTO);
+
+        ResetInputs();
+
+        await RefreshToDoItemsAndCategories();
+    }
+
+    private async Task RefreshToDoItemsAndCategories()
+    {
+        // You can use your existing logic for fetching data based on selected category
+        if (_selectedCategoryId.HasValue)
+        {
+            _toDoItems = (await _toDoService.GetToDosByCategory(_selectedCategoryId.Value)).ToList();
+        }
+        else
+        {
+            _toDoItems = (await _toDoService.getAllToDos()).ToList();
+        }
+
+        _categories = (await _categoryService.getAllCategories()).ToList();
+    }
+
+    private async Task DeleteButtonClick(ToDoItem toDoItem)
+    {
+        await _toDoService.DeleteToDoItem(toDoItem.Id);
+        await RefreshToDoItemsAndCategories();
+    }
+
+    private async Task UpdateComplete(ToDoItem toDoItem, bool newValue)
+    {
+        await _toDoService.setChecked(toDoItem.Id, newValue);
+        await RefreshToDoItemsAndCategories();
+    }
+
+    private void EditButtonClick(ToDoItem toDoItem)
+    {
+        editingToDoItemId = toDoItem.Id;
+
+        _toDoItemDTO.Title = toDoItem.Title;
+        _toDoItemDTO.Description = toDoItem.Description;
+        _datePart = toDoItem.DateTime;
+        _timePart = toDoItem.DateTime.TimeOfDay;
+        _toDoItemDTO.Complete = toDoItem.Complete;
+        _toDoItemDTO.DateTime = _datePart.Add(_timePart);
+        _toDoItemDTO.CategoryId = toDoItem.Category.Id;
+
+    }
+
+    private async Task UpdateToDoItem()
+    {
+
+        if(editingToDoItemId is not null)
+            await _toDoService.UpdateToDoItem((int)editingToDoItemId, _toDoItemDTO);
+
+        editingToDoItemId = null;
+        await RefreshToDoItemsAndCategories();
+        ResetInputs();
+    }
+
+    private void CancelEdit()
+    {
+        editingToDoItemId = null;
+        ResetInputs();
+    }
+
+    private void ResetInputs()
+    {
+        _toDoItemDTO.Title = string.Empty;
+        _toDoItemDTO.Description = string.Empty;
+        _datePart = DateTime.Today;
+        _timePart = new TimeSpan(12, 0, 0);
+        _toDoItemDTO.DateTime = _datePart.Add(_timePart);
+    }
+
+
+
+
+
+}

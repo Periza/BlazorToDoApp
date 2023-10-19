@@ -8,7 +8,7 @@ public class Category : BaseEntity
 {
     public Category(Session session) : base(session) {}
 
-    string _name;
+    private string _name;
     public string Name
     {
         get => _name;
