@@ -1,17 +1,18 @@
 ﻿@page "/todolist"
+@page "/"
 @using DevExpress.Blazor;
 @using Data.Entities;
 @using Services;
 @using BlazorToDoApp.Data.DTOs;
+@inject NavigationManager NavManger;
 @inject ToDoService _toDoService;
 @inject CategoryService _categoryService;
 @inject ILogger<ToDoList> Logger;
 
-<EditForm Model="_toDoItemDTO" OnValidSubmit="AddToDoItem">
+
+<EditForm Model="_toDoItemDTO" OnValidSubmit="AddToDoItem" style="margin-top: 20px; margin-bottom:20px">
     <DataAnnotationsValidator/>
     <ValidationSummary />
-
-    <DxLoadingIndicator Visible="@true"></DxLoadingIndicator>
 
     <DxFormLayout>
         <DxFormLayoutItem Caption="Title">
@@ -34,7 +35,7 @@
                 <DxTimeEdit TimeExpression="@(() => _timePart)" TimeChanged="((TimeSpan newValue) => UpdateTime(newValue))" Time="_timePart" ></DxTimeEdit>
             </Template>
         </DxFormLayoutItem>
-        <DxFormLayoutItem>
+        <DxFormLayoutItem Caption="Category">
             <Template Context="CategoryContext">
                 <DxComboBox 
                     DataAsync="@(ct => Task.FromResult(_categories))" 
@@ -61,17 +62,22 @@
     </DxFormLayout>
 </EditForm>
 
-<DxComboBox 
-    DataAsync="@(ct => Task.FromResult(_categories))" 
-    TData="Category" 
-    TValue="int?" 
-    ValueFieldName="Id"
-    TextFieldName="Name"
-    ValueChanged="@(async (int? newValue) => await FilterByCategory(newValue))"
-    NullText="All Categories"
-></DxComboBox>
+<div>
 
-<DxGrid Data="@_toDoItems" ShowSearchBox="true" ShowFilterRow="true">
+   <label style="margin-right: 10px">Filter by category: </label>
+
+    <DxComboBox 
+        DataAsync="@(ct => Task.FromResult(_categories))" 
+        TData="Category" 
+        TValue="int?" 
+        ValueFieldName="Id"
+        TextFieldName="Name"
+        ValueChanged="@(async (int? newValue) => await FilterByCategory(newValue))"
+        NullText="All Categories"
+    ></DxComboBox>
+</div>
+
+<DxGrid Data="@_toDoItems" ShowSearchBox="true" ShowFilterRow="true" style="margin-top: 20px">
     <Columns>
         <DxGridDataColumn FieldName="Title"></DxGridDataColumn>
         <DxGridDataColumn FieldName="Description"></DxGridDataColumn>
@@ -90,6 +96,7 @@
         </DxGridDataColumn>
     </Columns>
 </DxGrid>
+
 
 
 
@@ -170,6 +177,7 @@
     {
         await _toDoService.DeleteToDoItem(toDoItem.Id);
         await RefreshToDoItemsAndCategories();
+        StateHasChanged();
     }
 
     private async Task UpdateComplete(ToDoItem toDoItem, bool newValue)

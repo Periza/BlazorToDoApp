@@ -12,7 +12,7 @@ public class ValidateDateTimeAttribute : ValidationAttribute
             return ValidationResult.Success;
         }
 
-        return new ValidationResult("Both Date and Time must be provided.");
+        return new ValidationResult("Date and Time must be provided.");
     }
 
 }

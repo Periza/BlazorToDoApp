@@ -53,6 +53,8 @@ public class ToDoService
             toDoItem.DateTime = toDoDTO.DateTime;
             // Fetch the category
             var category = await _categoryRepository.GetByIdAsync(toDoDTO.CategoryId);
+
+            toDoItem.Category = category;
         } else
         {
             throw new Exception("Can't find a ToDoItem");
