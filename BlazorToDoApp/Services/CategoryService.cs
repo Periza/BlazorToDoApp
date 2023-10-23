@@ -14,17 +14,17 @@ public class CategoryService
         _categoryRepository = categoryRepository;
     }
 
-    public async Task<IEnumerable<Category>> getAllCategories()
+    public async Task<IEnumerable<Category>> getAllCategoriesAsync()
     {
         return (IEnumerable<Category>)await _categoryRepository.GetAllAsync();
     }
 
-    public async Task<Category> GetCategoryById(int id)
+    public async Task<Category> GetCategoryByIdAsync(int id)
     {
         return await _categoryRepository.GetByIdAsync(id);
     }
 
-    public async Task AddNewCategory(CategoryDTO categoryDTO)
+    public async Task AddNewCategoryAsync(CategoryDTO categoryDTO)
     {
         var category = new Category(_categoryRepository._unitOfWork)
         {
@@ -33,7 +33,7 @@ public class CategoryService
         await _categoryRepository.AddAsync(category);
     }
 
-    public async Task UpdateCategory(int categoryId, CategoryDTO categoryDTO)
+    public async Task UpdateCategoryAsync(int categoryId, CategoryDTO categoryDTO)
     {
         var category = await _categoryRepository.GetByIdAsync(categoryId);
         if (category is not null)
@@ -43,7 +43,7 @@ public class CategoryService
         }
     }
 
-    public async Task DeleteCategory(int id)
+    public async Task DeleteCategoryAsync(int id)
     {
         await _categoryRepository.DeleteAsync(id);
     }

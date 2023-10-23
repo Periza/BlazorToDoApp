@@ -17,17 +17,17 @@ public class ToDoService
         _categoryRepository = categoryRepository;
     }
 
-    public async Task<IEnumerable<ToDoItem>> getAllToDos()
+    public async Task<IEnumerable<ToDoItem>> getAllToDosAsync()
     {
         return (IEnumerable<ToDoItem>)await _toDoRepository.GetAllAsync();
     }
 
-    public async Task<ToDoItem> GetToDoById(int id)
+    public async Task<ToDoItem> GetToDoByIdAsync(int id)
     {
         return await _toDoRepository.GetByIdAsync(id);
     }
 
-    public async Task AddNewToDoItem(ToDoItemDTO toDoItemDTO)
+    public async Task AddNewToDoItemAsync(ToDoItemDTO toDoItemDTO)
     {
 
         var toDoItem = new ToDoItem(_toDoRepository._unitOfWork);
@@ -42,7 +42,7 @@ public class ToDoService
         await _toDoRepository.AddAsync(toDoItem);
     }
 
-    public async Task UpdateToDoItem(int toDoId, ToDoItemDTO toDoDTO)
+    public async Task UpdateToDoItemAsync(int toDoId, ToDoItemDTO toDoDTO)
     {
         var toDoItem = await _toDoRepository.GetByIdAsync(toDoId);
         if(toDoItem is not null)
@@ -63,12 +63,12 @@ public class ToDoService
         await _toDoRepository.UpdateAsync(toDoItem);
     }
 
-    public async Task DeleteToDoItem(int id)
+    public async Task DeleteToDoItemAsync(int id)
     {
         await _toDoRepository.DeleteAsync(id);
     }
 
-    public async Task<IEnumerable<ToDoItem>> GetToDosByCategory(int categoryId)
+    public async Task<IEnumerable<ToDoItem>> GetToDosByCategoryAsync(int categoryId)
     {
         var category = await _categoryRepository.GetByIdAsync(categoryId);
 
@@ -80,9 +80,9 @@ public class ToDoService
         return category.ToDoItems.ToList();
     }
 
-    public async Task setChecked(int id, bool state)
+    public async Task setCheckedAsync(int id, bool state)
     {
-        ToDoItem item = await GetToDoById(id);
+        ToDoItem item = await GetToDoByIdAsync(id);
         item.Complete = state;
         await _toDoRepository.UpdateAsync(item);
     }

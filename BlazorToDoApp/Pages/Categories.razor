@@ -95,8 +95,8 @@
 
     private async Task DeleteCategoryConfirmed()
     {
-        await _categoryService.DeleteCategory(categoryToDeleteId);
-        _categories = (await _categoryService.getAllCategories());
+        await _categoryService.DeleteCategoryAsync(categoryToDeleteId);
+        _categories = (await _categoryService.getAllCategoriesAsync());
         // Close the confirmation modal
         deleteConfirmationModal.CloseModal();
     }
@@ -109,15 +109,15 @@
 
     private async Task DeleteCategory(int id)
     {
-        await _categoryService.DeleteCategory(id);
-        _categories = (await _categoryService.getAllCategories());
+        await _categoryService.DeleteCategoryAsync(id);
+        _categories = (await _categoryService.getAllCategoriesAsync());
     }
 
     private async Task AddNewCategory()
     {
-        await _categoryService.AddNewCategory(categoryDTO);
+        await _categoryService.AddNewCategoryAsync(categoryDTO);
         categoryDTO.Name = string.Empty;
-        _categories = (await _categoryService.getAllCategories());
+        _categories = (await _categoryService.getAllCategoriesAsync());
     }
 
     private void StartEditingCategory(Category category)
@@ -130,10 +130,10 @@
     {
         if (editingCategoryId.HasValue)
         {
-            await _categoryService.UpdateCategory(editingCategoryId.Value, editingCategoryDTO);
+            await _categoryService.UpdateCategoryAsync(editingCategoryId.Value, editingCategoryDTO);
             editingCategoryId = null; 
             editingCategoryDTO = new CategoryDTO(); 
-            _categories = await _categoryService.getAllCategories();
+            _categories = await _categoryService.getAllCategoriesAsync();
         }
     }
 }

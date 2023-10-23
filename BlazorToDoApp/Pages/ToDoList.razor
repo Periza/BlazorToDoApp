@@ -10,7 +10,7 @@
 @inject ILogger<ToDoList> Logger;
 
 
-<EditForm Model="_toDoItemDTO" OnValidSubmit="AddToDoItem" style="margin-top: 20px; margin-bottom:20px">
+<EditForm Model="_toDoItemDTO" OnValidSubmit="AddToDoItemAsync" style="margin-top: 20px; margin-bottom:20px">
     <DataAnnotationsValidator/>
     <ValidationSummary />
 
@@ -54,7 +54,7 @@
                     <DxButton SubmitFormOnClick="true" Text="Submit" />
                 } else
                 {
-                    <DxButton Click="@(async () => await UpdateToDoItem())" Text="Save" />
+                    <DxButton Click="@(async () => await UpdateToDoItemAsync())" Text="Save" />
                     <DxButton Click="@(() => CancelEdit())" Context="buttonCtx">Cancel</DxButton>
                 }
             </Template>
@@ -72,7 +72,7 @@
         TValue="int?" 
         ValueFieldName="Id"
         TextFieldName="Name"
-        ValueChanged="@(async (int? newValue) => await FilterByCategory(newValue))"
+        ValueChanged="@(async (int? newValue) => await FilterByCategoryAsync(newValue))"
         NullText="All Categories"
     ></DxComboBox>
 </div>
@@ -85,12 +85,12 @@
         <DxGridDataColumn FieldName="DateTime" SearchEnabled="false" ></DxGridDataColumn>
         <DxGridDataColumn FieldName="Complete">
             <CellDisplayTemplate Context="checkContext">
-                <DxCheckBox Checked="@((bool)(checkContext.DataItem as ToDoItem)?.Complete)" CheckedChanged="@((bool newValue) => UpdateComplete(checkContext.DataItem as ToDoItem, newValue))"></DxCheckBox>
+                <DxCheckBox Checked="@((bool)(checkContext.DataItem as ToDoItem)?.Complete)" CheckedChanged="@((bool newValue) => UpdateCompleteAsync(checkContext.DataItem as ToDoItem, newValue))"></DxCheckBox>
             </CellDisplayTemplate>
         </DxGridDataColumn>
         <DxGridDataColumn SearchEnabled="false" FilterRowEditorVisible="false">
             <CellDisplayTemplate Context="buttonContext">
-                <DxButton Click="@(async () => await DeleteButtonClick(buttonContext.DataItem as ToDoItem))" Enabled="@(editingToDoItemId is null)">Delete</DxButton>
+                <DxButton Click="@(async () => await DeleteButtonClickAsync(buttonContext.DataItem as ToDoItem))" Enabled="@(editingToDoItemId is null)">Delete</DxButton>
                 <DxButton Click="@(() => EditButtonClick(buttonContext.DataItem as ToDoItem))">Edit</DxButton>
             </CellDisplayTemplate>
         </DxGridDataColumn>
@@ -114,24 +114,24 @@
     private TimeSpan _timePart = new TimeSpan(12, 0, 0);
 
 
-    private async Task FilterByCategory(int? categoryId)
+    private async Task FilterByCategoryAsync(int? categoryId)
     {
 
         _selectedCategoryId = categoryId;
         if (categoryId.HasValue)
         {
-            _toDoItems = (await _toDoService.GetToDosByCategory(categoryId.Value)).ToList();
+            _toDoItems = (await _toDoService.GetToDosByCategoryAsync(categoryId.Value)).ToList();
         }
         else
         {
-            _toDoItems = (await _toDoService.getAllToDos()).ToList();
+            _toDoItems = (await _toDoService.getAllToDosAsync()).ToList();
         }
 
 
     }
     protected override async Task OnInitializedAsync()
     {
-        await RefreshToDoItemsAndCategories();
+        await RefreshToDoItemsAndCategoriesAsync();
     }
 
     private void UpdateDate(DateTime newDate)
@@ -146,44 +146,44 @@
         _toDoItemDTO.DateTime = _datePart.Add(_timePart);
     }
 
-    private async Task AddToDoItem(EditContext context)
+    private async Task AddToDoItemAsync(EditContext context)
     {
 
         _toDoItemDTO.DateTime = _datePart.Add(_timePart);
 
-        await _toDoService.AddNewToDoItem(_toDoItemDTO);
+        await _toDoService.AddNewToDoItemAsync(_toDoItemDTO);
 
         ResetInputs();
 
-        await RefreshToDoItemsAndCategories();
+        await RefreshToDoItemsAndCategoriesAsync();
     }
 
-    private async Task RefreshToDoItemsAndCategories()
+    private async Task RefreshToDoItemsAndCategoriesAsync()
     {
         // You can use your existing logic for fetching data based on selected category
         if (_selectedCategoryId.HasValue)
         {
-            _toDoItems = (await _toDoService.GetToDosByCategory(_selectedCategoryId.Value)).ToList();
+            _toDoItems = (await _toDoService.GetToDosByCategoryAsync(_selectedCategoryId.Value)).ToList();
         }
         else
         {
-            _toDoItems = (await _toDoService.getAllToDos()).ToList();
+            _toDoItems = (await _toDoService.getAllToDosAsync()).ToList();
         }
 
-        _categories = (await _categoryService.getAllCategories()).ToList();
+        _categories = (await _categoryService.getAllCategoriesAsync()).ToList();
     }
 
-    private async Task DeleteButtonClick(ToDoItem toDoItem)
+    private async Task DeleteButtonClickAsync(ToDoItem toDoItem)
     {
-        await _toDoService.DeleteToDoItem(toDoItem.Id);
-        await RefreshToDoItemsAndCategories();
+        await _toDoService.DeleteToDoItemAsync(toDoItem.Id);
+        await RefreshToDoItemsAndCategoriesAsync();
         StateHasChanged();
     }
 
-    private async Task UpdateComplete(ToDoItem toDoItem, bool newValue)
+    private async Task UpdateCompleteAsync(ToDoItem toDoItem, bool newValue)
     {
-        await _toDoService.setChecked(toDoItem.Id, newValue);
-        await RefreshToDoItemsAndCategories();
+        await _toDoService.setCheckedAsync(toDoItem.Id, newValue);
+        await RefreshToDoItemsAndCategoriesAsync();
     }
 
     private void EditButtonClick(ToDoItem toDoItem)
@@ -200,14 +200,14 @@
 
     }
 
-    private async Task UpdateToDoItem()
+    private async Task UpdateToDoItemAsync()
     {
 
         if(editingToDoItemId is not null)
-            await _toDoService.UpdateToDoItem((int)editingToDoItemId, _toDoItemDTO);
+            await _toDoService.UpdateToDoItemAsync((int)editingToDoItemId, _toDoItemDTO);
 
         editingToDoItemId = null;
-        await RefreshToDoItemsAndCategories();
+        await RefreshToDoItemsAndCategoriesAsync();
         ResetInputs();
     }
 
