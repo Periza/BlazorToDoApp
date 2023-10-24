@@ -66,18 +66,20 @@
 
    <label style="margin-right: 10px">Filter by category: </label>
 
-    <DxComboBox 
-        DataAsync="@(ct => Task.FromResult(_categories))" 
-        TData="Category" 
-        TValue="int?" 
-        ValueFieldName="Id"
-        TextFieldName="Name"
-        ValueChanged="@(async (int? newValue) => await FilterByCategoryAsync(newValue))"
-        NullText="All Categories"
-    ></DxComboBox>
+    <DxComboBox DataAsync="@(ct => Task.FromResult(_categories))"
+                TData="Category"
+                TValue="int?"
+                Value="@_selectedCategoryId"
+                ValueFieldName="Id"
+                TextFieldName="Name"
+                ValueChanged="@(async (int? newValue) => await FilterByCategoryAsync(newValue))"
+                NullText="All Categories">
+    </DxComboBox>
+
+    <DxButton Text="Clear filters" Click="@(() => ClearCategoryFilter())" style="margin-top: 15px"/>
 </div>
 
-<DxGrid Data="@_toDoItems" ShowSearchBox="true" ShowFilterRow="true" style="margin-top: 20px">
+<DxGrid Data="@_toDoItems" ShowSearchBox="true" ShowFilterRow="true" style="margin-top: 20px; margin-bottom:30px;">
     <Columns>
         <DxGridDataColumn FieldName="Title"></DxGridDataColumn>
         <DxGridDataColumn FieldName="Description"></DxGridDataColumn>
@@ -224,6 +226,13 @@
         _datePart = DateTime.Today;
         _timePart = new TimeSpan(12, 0, 0);
         _toDoItemDTO.DateTime = _datePart.Add(_timePart);
+    }
+
+    private async Task ClearCategoryFilter()
+    {
+        _selectedCategoryId = null;
+        _toDoItems = await _toDoService.getAllToDosAsync();
+        StateHasChanged();
     }
 
 
